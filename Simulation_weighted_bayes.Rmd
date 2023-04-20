@@ -31,7 +31,7 @@ SimulateData <- function(n_agents, n_trials) {
     FirstRating_list = list()
     SecondRating_list = list()
     Feedback_list = list()
-    Other_list = list()
+    GroupRating_list = list()
     Agent_list = list()
     Trial_list = list()
     #print(i)
@@ -43,33 +43,33 @@ SimulateData <- function(n_agents, n_trials) {
         Feedback <- round(runif(1, -3, 3), 0)
       } 
       
-      Other <- FirstRating + Feedback #Other is the rating of the self + the feedback
-      while (Other < 1 | Other > 8) { #While Other is outside of range of 1 and 8, redo Feedback and recalculate Other
+      GroupRating <- FirstRating + Feedback #Other is the rating of the self + the feedback
+      while (GroupRating < 1 | GroupRating > 8) { #While Other is outside of range of 1 and 8, redo Feedback and recalculate Other
         Feedback <- round(runif(1, -3, 3), 0)
         while (Feedback == 1 | Feedback == -1){
           Feedback <- round(runif(1, -3, 3), 0)
         } 
-        Other <- FirstRating + Feedback
+        GroupRating <- FirstRating + Feedback
       }
       
       #Transforming 
       FirstRating_transformed = (((FirstRating - 1)/7)*0.8) + 0.1 #Transforming to space between 0.1 and 0.9
-      Other_transformed = (((Other - 1)/7)*0.8) + 0.1
+      GroupRating_transformed = (((GroupRating - 1)/7)*0.8) + 0.1
       
       #Calculating next choice
-      SecondRating_transformed <- inv_logit_scaled(bias + 0.8*logit_scaled(FirstRating_transformed) + 0.5*logit_scaled(Other_transformed)) #Simple bayes. Same weight so still a simple Bayes, but we want to take an average between the two sources of evidence. Otherwise we will put too much weight on the evidence. NB bias is not transformed because we defined it on this scale already.
+      SecondRating_transformed <- inv_logit_scaled(bias + 0.8*logit_scaled(FirstRating_transformed) + 0.5*logit_scaled(GroupRating_transformed)) #Simple bayes. Same weight so still a simple Bayes, but we want to take an average between the two sources of evidence. Otherwise we will put too much weight on the evidence. NB bias is not transformed because we defined it on this scale already.
       
       SecondRating = round((((SecondRating_transformed - 0.1)/0.8)*7) + 1) #Transforming SecondRating back
       
       FirstRating_list = list.append(FirstRating_list, FirstRating) #Lists for df
       SecondRating_list = list.append(SecondRating_list, SecondRating)
       Feedback_list = list.append(Feedback_list, Feedback)
-      Other_list = list.append(Other_list, Other)
+      GroupRating_list = list.append(GroupRating_list, GroupRating)
       Agent_list = list.append(Agent_list, i)
       Trial_list = list.append(Trial_list, j)
     }
     
-    df_temp <- data.frame(ID = unlist(Agent_list), Trial = unlist(Trial_list), FirstRating = unlist(FirstRating_list), Feedback = unlist(Feedback_list), SecondRating = unlist(SecondRating_list), Other = unlist(Other_list)) #Creating df by unpacking lists
+    df_temp <- data.frame(ID = unlist(Agent_list), Trial = unlist(Trial_list), FirstRating = unlist(FirstRating_list), Feedback = unlist(Feedback_list), SecondRating = unlist(SecondRating_list), GroupRating = unlist(GroupRating_list)) #Creating df by unpacking lists
     
     df <- rbind(df, df_temp)
     }
