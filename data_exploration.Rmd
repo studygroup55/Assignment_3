@@ -1,0 +1,115 @@
+---
+title: "assignment_3_data_exploration.Rmd"
+output: html_document
+date: "2023-04-20"
+---
+
+
+```{r}
+#Read packages
+pacman::p_load(tidyverse,arsenal, gridExtra)
+```
+
+
+**Reading and merging all data**
+```{r}
+#Reading cleaned data-sets
+simonsen <- read_csv("Simonsen_clean copy.csv")
+sc <- read_csv("sc_df_clean copy.csv")
+cogsci <- read_csv("cogsci_clean copy.csv")
+
+#Fix some issues in sc
+sc = subset(sc, select = -c(TimeStamp1, TimeStamp2, Participant))
+sc = sc[2:9]
+sc$ID <- match(sc$ID, unique(sc$ID)) #anonymize ID's
+
+#Call ID with a prefix
+sc$ID <- paste0("SC", sc$ID)
+simonsen$ID <- paste0("SI", simonsen$ID)
+cogsci$ID <- paste0("CS", cogsci$ID)
+
+#Combining them into one dataframe
+all_d <- rbind(simonsen, sc, cogsci)
+
+```
+
+**Central numbers**
+```{r}
+#Check for NAs
+NAs <- names(all_d)[colSums(is.na(all_d)) > 0]
+NAs #NA's in Feedback
+
+#NA's occur when grouprating is 0 (i.e. in cases where there was no feedback to make control for regression to the mean possible). Exclude those trials. 
+all <- all_d[complete.cases(all_d[, c("Feedback")]),]
+
+#Counting ID's
+allID <- as.data.frame(unique(all$ID))
+count(allID) #122 participants
+
+```
+
+**Distribution of scores, summary stats** 
+```{r}
+#Summary statistics
+get_summary_stats(all[, c("FirstRating", "SecondRating", "Change", "GroupRating")]) 
+
+#Explore FirstRating
+FirstRating <- data.frame(table(all$FirstRating))
+
+p1 <- ggplot(FirstRating, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "FirstRating", y = "Count") +
+    scale_fill_brewer() +
+  guides(fill = FALSE)
+
+#Explore SecondRating
+SecondRating <- data.frame(table(all$SecondRating))
+
+p2 <- ggplot(SecondRating, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "SecondRating", y = "Count") +
+    scale_fill_brewer() +
+  guides(fill = FALSE)
+
+#Explore GroupRating
+GroupRating <- data.frame(table(all$GroupRating))
+
+p3 <- ggplot(GroupRating, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  labs(x = "GroupRating", y = "Count") +
+  scale_fill_brewer() +
+  guides(fill = FALSE)
+
+#Explore Change
+p4 <- ggplot(Change, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "Change", y = "Count") +
+  scale_fill_brewer() +
+  guides(fill = FALSE)
+
+#Grid arrange plots
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
