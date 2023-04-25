@@ -34,7 +34,7 @@ parameters {
 //The model 
 model {
   target +=  normal_lpdf(bias | 0, 1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
-  target +=  normal_lpdf(Change | inv_logit(bias + 0.3 * to_vector(l_FirstRating) + 0.7 * to_vector(l_GroupRating)), 1);
+  target +=  normal_lpdf(Change | inv_logit(bias + 0.7 * to_vector(l_FirstRating) + 0.3 * to_vector(l_GroupRating)), 1);
 }
 
 
@@ -54,7 +54,7 @@ model {
 generated quantities{
   real inv_logit_bias;
   
-  inv_logit_bias = inv_logit(bias) ; //THIS IS SOLELY FOR SANITY REASONS. To see what bias would be on a probability scale.
+  bias_p = inv_logit(bias) ; //THIS IS SOLELY FOR SANITY REASONS. To see what bias would be on a probability scale.
 }
 
 
