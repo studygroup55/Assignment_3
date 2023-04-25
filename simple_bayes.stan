@@ -1,7 +1,7 @@
 // Input data
 data {
   int <lower = 0> N; //sample size
-  vector [N] Change; //difference between first and second rating <lower = -7, upper = 7> 
+  vector [N] SecondRating; //difference between first and second rating <lower = -7, upper = 7> 
   vector [N] FirstRating;
   vector [N] GroupRating;
 }
@@ -32,28 +32,26 @@ parameters {
 
 //The model 
 model {
-  target +=  normal_lpdf(bias | 0, 1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
-  target +=  normal_lpdf(Change | inv_logit(bias + 0.5 * to_vector(l_FirstRating) + 0.5 * to_vector(l_GroupRating)), 1);
+  target +=  normal_lpdf(bias | 0, 0.1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
+
+  for (trial in 1:N) { 
+    target +=  normal_lpdf(SecondRating[trial] | inv_logit(bias + 0.5 * l_FirstRating[trial] + 0.5 * l_GroupRating[trial]), 1);
+  }
 }
 
-
-// this is not yet finished
-// generated quantities{
-//   real bias_prior;
-//   array[N] real log_lik;
-//   
-//   bias_prior = normal_rng(0, 1);
-//   
-//   for (n in 1:N){  
-//     log_lik[n] = bernoulli_logit_lpmf(y[n] | bias + w*l_FirstRating[n] +  w*l_SecondRating[n]); # we must have the weight being on the right scale
-//   }
-//   
-// }
 
 generated quantities{
-  real bias_p;
-  
-  bias_p = inv_logit(bias) ; //THIS IS SOLELY FOR SANITY REASONS. To see what bias would be on a probability scale.
-}
+   real bias_probability;
+   real bias_prior;
+   array[N] real log_lik;
+   
+   
+   bias_probability = inv_logit(bias);
+   
+   bias_prior = normal_rng(0, 1);
 
+   for (trial in 1:N){  
+     log_lik[trial] = normal_lpdf(SecondRating[trial] | inv_logit(bias + 0.5*l_FirstRating[trial] +  0.5*l_GroupRating[trial]), 1); // we must have the weight being on the right scale
+   }
+}
 

@@ -21,7 +21,6 @@ pacman::p_load(tidyverse, brms, lme4, rlist, rstan, cmdstanr)
 
 ```{r}
 set.seed <- 1981 # Defining a seed so the results are always the same
-bias = 0
 
 df = data.frame()
 
@@ -34,6 +33,13 @@ SimulateData <- function(n_agents, n_trials) {
     GroupRating_list = list()
     Agent_list = list()
     Trial_list = list()
+    
+    bias = 0
+    w1 <- rbeta(1, 4, 2)
+    w2 <- (1-w1)
+    print(w1)
+    print(w2)
+    
     #print(i)
     for (j in 1:n_trials) {
       #print(j)
@@ -57,7 +63,7 @@ SimulateData <- function(n_agents, n_trials) {
       GroupRating_transformed = (((GroupRating - 1)/7)*0.8) + 0.1
       
       #Calculating next choice
-      SecondRating_transformed <- inv_logit_scaled(bias + 0.7*logit_scaled(FirstRating_transformed) + 0.3*logit_scaled(GroupRating_transformed)) #Simple bayes. Same weight so still a simple Bayes, but we want to take an average between the two sources of evidence. Otherwise we will put too much weight on the evidence. NB bias is not transformed because we defined it on this scale already.
+      SecondRating_transformed <- inv_logit_scaled(bias + w1*logit_scaled(FirstRating_transformed) + w2*logit_scaled(GroupRating_transformed)) #Simple bayes. Same weight so still a simple Bayes, but we want to take an average between the two sources of evidence. Otherwise we will put too much weight on the evidence. NB bias is not transformed because we defined it on this scale already.
       
       SecondRating = round((((SecondRating_transformed - 0.1)/0.8)*7) + 1) #Transforming SecondRating back
       
@@ -78,48 +84,68 @@ SimulateData <- function(n_agents, n_trials) {
   }
 
 
-df <- SimulateData(100, 120) 
+n_agents = 10
+n_trials = 500
+
+df <- SimulateData(n_agents, n_trials) 
 
 ```
 
 
 ```{r}
-
 #Adding a collumn for change 
 df <-  df %>% 
   mutate(Change = SecondRating - FirstRating)
 
+for (i in 1:n_agents) { 
+  
+  df_temp <- df %>% 
+    subset(ID == i)
+  
+  data_weightedBayes <- list(
+    N = nrow(df_temp),
+    SecondRating = df_temp$SecondRating,
+    FirstRating = df_temp$FirstRating,
+    GroupRating = df_temp$GroupRating
+  )
 
-data_weightedBayes <- list(
-  N = nrow(df),
-  Change = df$Change,
-  FirstRating = df$FirstRating,
-  GroupRating = df$GroupRating
-)
-
-mod_weightedBayes <- cmdstan_model("weighted_bayes.stan", cpp_options = list(stan_threads = TRUE),
+  mod_weightedBayes <- cmdstan_model("weighted_bayes.stan", cpp_options = list(stan_threads = TRUE),
                      stanc_options = list("O1"))
 
 
 
-samples <- mod_weightedBayes$sample(
-  data = data_weightedBayes, # the data :-)
-  seed = 123,  # a seed, so I always get the same results
-  chains = 2,  # how many chains should I fit (to check whether they give the same results)
-  parallel_chains = 2, # how many of the chains can be run in parallel?
-  threads_per_chain = 2, # distribute gradient estimations within chain across multiple cores
-  iter_warmup = 1000,  # warmup iterations through which hyperparameters (steps and step length) are adjusted
-  iter_sampling = 2000, # total number of iterations
-  refresh = 0,  # how often to show that iterations have been run
-  max_treedepth = 20, # how many steps in the future to check to avoid u-turns
-  adapt_delta = 0.99, # how high a learning rate to adjust hyperparameters during warmup
-)
+  samples <- mod_weightedBayes$sample(
+    data = data_weightedBayes, # the data :-)
+    seed = 123,  # a seed, so I always get the same results
+    chains = 2,  # how many chains should I fit (to check whether they give the same results)
+    parallel_chains = 2, # how many of the chains can be run in parallel?
+    threads_per_chain = 2, # distribute gradient estimations within chain across multiple cores
+    iter_warmup = 1000,  # warmup iterations through which hyperparameters (steps and step length) are adjusted
+    iter_sampling = 2000, # total number of iterations
+    refresh = 0,  # how often to show that iterations have been run
+    max_treedepth = 20, # how many steps in the future to check to avoid u-turns
+    adapt_delta = 0.99, # how high a learning rate to adjust hyperparameters during warmup
+  )
   
-#Disabling scientific notation
-options(scipen=999)
+  #Disabling scientific notation
+  options(scipen=999)
+    
+  #extract summary 
+  samples$summary()
   
-#extract summary 
-samples$summary()
+  # assign function within loop
+  assign(paste0("weighted_summary_ID_", i), samples$summary())
   
+    
+}
+```
+
+```{r}
+
+#define range
+p = seq(0, 1, length=100)
+
+#create plot of Beta distribution with shape parameters 2 and 10
+plot(p, dbeta(p, 2, 5), type='l')
 ```
 

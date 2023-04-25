@@ -2,9 +2,11 @@
 // Input data
 data {
   int <lower = 0> N; //sample size
-  vector [N] Change; //difference between first and second rating <lower = -7, upper = 7> 
+  vector [N] SecondRating;
   vector [N] FirstRating;
   vector [N] GroupRating;
+  
+  
 }
 
 
@@ -28,51 +30,35 @@ transformed data{ // Transforming data into prob scale
 // Parameters
 parameters {
   real bias;
-  real <lower = 0.5, upper = 1> w1;
-  real <lower = 0.5, upper = 1> w2;
+  real <lower = 0, upper = 1> w1;
+  real <lower = 0, upper = 1> w2;
 } 
-
-transformed parameters {
-  real <lower = 0, upper = 1> weight1;
-  real <lower = 0, upper = 1> weight2;
-  
-  
-  weight1 = (w1 - 0.5) * 2;
-  weight2 = (w2 - 0.5) * 2;
-}
 
 
 //The model 
 model {
-  target +=  normal_lpdf(bias | 0, 1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
-  target += beta_lpdf(weight1 | 1, 1);
-  target += beta_lpdf(weight2 | 1, 1);
+  target += normal_lpdf(bias | 0, 0.1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
+  target += beta_lpdf(w1 | 1, 1);
+  target += beta_lpdf(w2 | 1, 1);
   
   for (trial in 1:N) { 
-    target +=  normal_lpdf(Change | inv_logit(bias + weight1 * l_FirstRating[trial] + weight2 * l_GroupRating[trial]), 1);
+    target +=  normal_lpdf(SecondRating[trial] | inv_logit(bias + w1 * l_FirstRating[trial] + w2 * l_GroupRating[trial]), 1);
   }
 }
-
 
 
 generated quantities{
    real bias_probability;
    real bias_prior;
-   real w1_prior;
-   real w2_prior;
    array[N] real log_lik;
-   
    
    bias_probability = inv_logit(bias);
    
    bias_prior = normal_rng(0, 1);
-   w1_prior = 0.5 + inv_logit(normal_rng(0,1))/2;
-   w2_prior = 0.5 + inv_logit(normal_rng(0,1))/2;
    
    for (trial in 1:N){  
-     log_lik[trial] = normal_lpdf(Change[trial] | inv_logit(bias + weight1*l_FirstRating[trial] +  weight2*l_GroupRating[trial]), 1); # we must have the weight being on the right scale
+     log_lik[trial] = normal_lpdf(SecondRating[trial] | inv_logit(bias + w1*l_FirstRating[trial] +  w2*l_GroupRating[trial]), 1); // we must have the weight being on the right scale
    }
-   
  }
 
 
