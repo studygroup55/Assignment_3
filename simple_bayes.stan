@@ -51,7 +51,7 @@ model {
 // }
 
 generated quantities{
-  real inv_logit_bias;
+  real bias_p;
   
   bias_p = inv_logit(bias) ; //THIS IS SOLELY FOR SANITY REASONS. To see what bias would be on a probability scale.
 }

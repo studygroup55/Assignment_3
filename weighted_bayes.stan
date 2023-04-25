@@ -28,34 +28,54 @@ transformed data{ // Transforming data into prob scale
 // Parameters
 parameters {
   real bias;
+  real <lower = 0.5, upper = 1> w1;
+  real <lower = 0.5, upper = 1> w2;
+} 
+
+transformed parameters {
+  real <lower = 0, upper = 1> weight1;
+  real <lower = 0, upper = 1> weight2;
+  
+  
+  weight1 = (w1 - 0.5) * 2;
+  weight2 = (w2 - 0.5) * 2;
 }
 
 
 //The model 
 model {
   target +=  normal_lpdf(bias | 0, 1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
-  target +=  normal_lpdf(Change | inv_logit(bias + 0.7 * to_vector(l_FirstRating) + 0.3 * to_vector(l_GroupRating)), 1);
+  target += beta_lpdf(weight1 | 1, 1);
+  target += beta_lpdf(weight2 | 1, 1);
+  
+  for (trial in 1:N) { 
+    target +=  normal_lpdf(Change | inv_logit(bias + weight1 * l_FirstRating[trial] + weight2 * l_GroupRating[trial]), 1);
+  }
 }
 
 
-// this is not yet finished
-// generated quantities{
-//   real bias_prior;
-//   array[N] real log_lik;
-//   
-//   bias_prior = normal_rng(0, 1);
-//   
-//   for (n in 1:N){  
-//     log_lik[n] = bernoulli_logit_lpmf(y[n] | bias + w*l_FirstRating[n] +  w*l_SecondRating[n]); # we must have the weight being on the right scale
-//   }
-//   
-// }
 
 generated quantities{
-  real inv_logit_bias;
-  
-  bias_p = inv_logit(bias) ; //THIS IS SOLELY FOR SANITY REASONS. To see what bias would be on a probability scale.
-}
+   real bias_probability;
+   real bias_prior;
+   real w1_prior;
+   real w2_prior;
+   array[N] real log_lik;
+   
+   
+   bias_probability = inv_logit(bias);
+   
+   bias_prior = normal_rng(0, 1);
+   w1_prior = 0.5 + inv_logit(normal_rng(0,1))/2;
+   w2_prior = 0.5 + inv_logit(normal_rng(0,1))/2;
+   
+   for (trial in 1:N){  
+     log_lik[trial] = normal_lpdf(Change[trial] | inv_logit(bias + weight1*l_FirstRating[trial] +  weight2*l_GroupRating[trial]), 1); # we must have the weight being on the right scale
+   }
+   
+ }
+
+
 
 
 
