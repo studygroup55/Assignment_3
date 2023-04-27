@@ -32,16 +32,18 @@ transformed data{ // Transforming data into prob scale
 // Parameters
 parameters {
   real bias;
+  real SD;
 }
 
 
 //The model 
 model {
-  target +=  normal_lpdf(bias | 0, 0.1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
+  target += normal_lpdf(bias | 0, 0.1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
+  target += normal_lpdf(SD | 0, 1) - normal_lccdf(0 | 0, 1);
 
   for (trial in 1:N) { 
-    target +=  normal_lpdf(l_SecondRating[trial] | bias + 0.5 * l_FirstRating[trial] + 0.5 * l_GroupRating[trial], 1);
-  } //WE should probably delete the inv_logit
+    target +=  normal_lpdf(l_SecondRating[trial] | bias + 0.5 * l_FirstRating[trial] + 0.5 * l_GroupRating[trial], SD);
+  } 
 }
 
 
@@ -56,7 +58,7 @@ generated quantities{
    bias_prior = normal_rng(0, 1);
 
    for (trial in 1:N){  
-     log_lik[trial] = normal_lpdf(l_SecondRating[trial] | bias + 0.5*l_FirstRating[trial] +  0.5*l_GroupRating[trial], 1); // we must have the weight being on the right scale
+     log_lik[trial] = normal_lpdf(l_SecondRating[trial] | bias + 0.5*l_FirstRating[trial] +  0.5*l_GroupRating[trial], SD); // we must have the weight being on the right scale
    }
 }
 

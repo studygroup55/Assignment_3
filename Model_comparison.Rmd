@@ -17,18 +17,21 @@ knitr::opts_chunk$set(echo = TRUE)
 pacman::p_load(tidyverse, brms, lme4, rlist, rstan, cmdstanr)
 
 
-df <- read_csv()
+df <- read_csv("all_data.csv")
+
+
+df_sub <- df %>% 
+  subset(ID == "SI201" |ID == "SI203")
 
 ```
-
 
 
 **Simple bayes** 
 ```{r}
 
-for (i in 1:n_agents) { 
+for (i in unique(df_sub$ID)) { 
   
-  df_temp <- df %>% 
+  df_temp <- df_sub %>% 
     subset(ID == i)
   
   data_simpleBayes <- list(
@@ -63,7 +66,9 @@ for (i in 1:n_agents) {
   samples$summary()
   
   # assign function within loop
-  assign(paste0("simple_summary_ID_", i), samples$summary())
+  assign(paste0("simple_ID_", i), samples)
+  
+  
     
 }
   
@@ -74,9 +79,9 @@ for (i in 1:n_agents) {
 **Weighted bayes** 
 ```{r}
 
-for (i in 1:n_agents) { 
+for (i in unique(df_sub$ID)) { 
   
-  df_temp <- df %>% 
+  df_temp <- df_sub %>% 
     subset(ID == i)
   
   data_weightedBayes <- list(
@@ -111,9 +116,18 @@ for (i in 1:n_agents) {
   samples$summary()
   
   # assign function within loop
-  assign(paste0("weighted_summary_ID_", i), samples$summary())
+  assign(paste0("weighted_ID_", i), samples)
   
-    
 }
+```
+
+```{r}
+
+loo_weighted_SI201 <- weighted_ID_SI201$loo(cores = 4)
+loo_simple_SI201 <- simple_ID_SI201$loo(cores = 4)
+
+loo_compare(loo_weighted_SI201,loo_simple_SI201)
+
+
 ```
 

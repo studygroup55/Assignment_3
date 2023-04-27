@@ -42,7 +42,7 @@ parameters {
 //The model 
 model {
   target += normal_lpdf(bias | 0, 0.1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
-  target += lognormal_lpdf(SD | 0, 0.25);
+  target += normal_lpdf(SD | 0, 1) - normal_lccdf(0 | 0, 1);
   target += beta_lpdf(w | 1, 1);
   
   for (trial in 1:N) { 

@@ -14,13 +14,12 @@ pacman::p_load(tidyverse,arsenal, gridExtra)
 **Reading and merging all data**
 ```{r}
 #Reading cleaned data-sets
-simonsen <- read_csv("Simonsen_clean copy.csv")
-sc <- read_csv("sc_df_clean copy.csv")
-cogsci <- read_csv("cogsci_clean copy.csv")
+simonsen <- read_csv("Simonsen_clean.csv")
+sc <- read_csv("sc_df_clean.csv")
+cogsci <- read_csv("cogsci_clean.csv")
 
 #Fix some issues in sc
 sc = subset(sc, select = -c(TimeStamp1, TimeStamp2, Participant))
-sc = sc[2:9]
 sc$ID <- match(sc$ID, unique(sc$ID)) #anonymize ID's
 
 #Call ID with a prefix
@@ -30,6 +29,8 @@ cogsci$ID <- paste0("CS", cogsci$ID)
 
 #Combining them into one dataframe
 all_d <- rbind(simonsen, sc, cogsci)
+
+write.csv(all_d, "all_data.csv")
 
 ```
 
