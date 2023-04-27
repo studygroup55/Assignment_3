@@ -11,16 +11,21 @@ data {
 transformed data{ // Transforming data into prob scale
   vector[N] FirstRating_transformed;
   vector[N] GroupRating_transformed;
+  vector[N] SecondRating_transformed;
   vector[N] l_FirstRating;
   vector[N] l_GroupRating;
+  vector[N] l_SecondRating;
   
   // Here there is an issue. Consider changing something to vectors from the beginning
   for (trial in 1:N) { 
     FirstRating_transformed[trial] = (((FirstRating[trial] - 1)/7.0)*0.8) + 0.1;  // keeping it between 0.1 and 0.9
     GroupRating_transformed[trial] = (((GroupRating[trial] - 1)/7.0)*0.8) + 0.1; // keeping it between 0.1 and 0.9
-  
+    SecondRating_transformed[trial] = (((SecondRating[trial] - 1)/7.0)*0.8) + 0.1;
+    
+    
     l_FirstRating[trial] = logit(FirstRating_transformed[trial]);
     l_GroupRating[trial] = logit(GroupRating_transformed[trial]);
+    l_SecondRating[trial] = logit(SecondRating_transformed[trial]); 
   }
 }
 
@@ -35,8 +40,8 @@ model {
   target +=  normal_lpdf(bias | 0, 0.1); // Prior for bias.  we use the normal distribution since our data is continuous at this point
 
   for (trial in 1:N) { 
-    target +=  normal_lpdf(SecondRating[trial] | inv_logit(bias + 0.5 * l_FirstRating[trial] + 0.5 * l_GroupRating[trial]), 1);
-  }
+    target +=  normal_lpdf(l_SecondRating[trial] | bias + 0.5 * l_FirstRating[trial] + 0.5 * l_GroupRating[trial], 1);
+  } //WE should probably delete the inv_logit
 }
 
 
@@ -51,7 +56,7 @@ generated quantities{
    bias_prior = normal_rng(0, 1);
 
    for (trial in 1:N){  
-     log_lik[trial] = normal_lpdf(SecondRating[trial] | inv_logit(bias + 0.5*l_FirstRating[trial] +  0.5*l_GroupRating[trial]), 1); // we must have the weight being on the right scale
+     log_lik[trial] = normal_lpdf(l_SecondRating[trial] | bias + 0.5*l_FirstRating[trial] +  0.5*l_GroupRating[trial], 1); // we must have the weight being on the right scale
    }
 }
 

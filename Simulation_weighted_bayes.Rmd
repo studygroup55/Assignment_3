@@ -35,10 +35,8 @@ SimulateData <- function(n_agents, n_trials) {
     Trial_list = list()
     
     bias = 0
-    w1 <- rbeta(1, 4, 2)
-    w2 <- (1-w1)
-    print(w1)
-    print(w2)
+    w <- rbeta(1, 4, 2)
+    print(w)
     
     #print(i)
     for (j in 1:n_trials) {
@@ -63,7 +61,7 @@ SimulateData <- function(n_agents, n_trials) {
       GroupRating_transformed = (((GroupRating - 1)/7)*0.8) + 0.1
       
       #Calculating next choice
-      SecondRating_transformed <- inv_logit_scaled(bias + w1*logit_scaled(FirstRating_transformed) + w2*logit_scaled(GroupRating_transformed)) #Simple bayes. Same weight so still a simple Bayes, but we want to take an average between the two sources of evidence. Otherwise we will put too much weight on the evidence. NB bias is not transformed because we defined it on this scale already.
+      SecondRating_transformed <- inv_logit_scaled(bias + w*logit_scaled(FirstRating_transformed) + (1-w)*logit_scaled(GroupRating_transformed)) #Simple bayes. Same weight so still a simple Bayes, but we want to take an average between the two sources of evidence. Otherwise we will put too much weight on the evidence. NB bias is not transformed because we defined it on this scale already.
       
       SecondRating = round((((SecondRating_transformed - 0.1)/0.8)*7) + 1) #Transforming SecondRating back
       
@@ -140,12 +138,14 @@ for (i in 1:n_agents) {
 }
 ```
 
+
+
 ```{r}
 
 #define range
 p = seq(0, 1, length=100)
 
 #create plot of Beta distribution with shape parameters 2 and 10
-plot(p, dbeta(p, 2, 5), type='l')
+plot(p, dbeta(p, 4, 2), type='l')
 ```
 

@@ -1,0 +1,119 @@
+---
+title: "Model_comparison.Rmd"
+author: "Lina Elkjær Pedersen"
+date: "2023-04-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+**Loading data and packages**
+```{r}
+pacman::p_load(tidyverse, brms, lme4, rlist, rstan, cmdstanr)
+
+
+df <- read_csv()
+
+```
+
+
+
+**Simple bayes** 
+```{r}
+
+for (i in 1:n_agents) { 
+  
+  df_temp <- df %>% 
+    subset(ID == i)
+  
+  data_simpleBayes <- list(
+    N = nrow(df_temp),
+    SecondRating = df_temp$SecondRating,
+    FirstRating = df_temp$FirstRating,
+    GroupRating = df_temp$GroupRating
+  )
+
+  mod_simpleBayes <- cmdstan_model("simple_bayes.stan", cpp_options = list(stan_threads = TRUE),
+                     stanc_options = list("O1"))
+
+
+
+  samples <- mod_simpleBayes$sample(
+    data = data_simpleBayes, # the data :-)
+    seed = 123,  # a seed, so I always get the same results
+    chains = 2,  # how many chains should I fit (to check whether they give the same results)
+    parallel_chains = 2, # how many of the chains can be run in parallel?
+    threads_per_chain = 2, # distribute gradient estimations within chain across multiple cores
+    iter_warmup = 1000,  # warmup iterations through which hyperparameters (steps and step length) are adjusted
+    iter_sampling = 2000, # total number of iterations
+    refresh = 0,  # how often to show that iterations have been run
+    max_treedepth = 20, # how many steps in the future to check to avoid u-turns
+    adapt_delta = 0.99, # how high a learning rate to adjust hyperparameters during warmup
+  )
+  
+  #Disabling scientific notation
+  options(scipen=999)
+    
+  #extract summary 
+  samples$summary()
+  
+  # assign function within loop
+  assign(paste0("simple_summary_ID_", i), samples$summary())
+    
+}
+  
+```
+
+
+
+**Weighted bayes** 
+```{r}
+
+for (i in 1:n_agents) { 
+  
+  df_temp <- df %>% 
+    subset(ID == i)
+  
+  data_weightedBayes <- list(
+    N = nrow(df_temp),
+    SecondRating = df_temp$SecondRating,
+    FirstRating = df_temp$FirstRating,
+    GroupRating = df_temp$GroupRating
+  )
+
+  mod_weightedBayes <- cmdstan_model("weighted_bayes.stan", cpp_options = list(stan_threads = TRUE),
+                     stanc_options = list("O1"))
+
+
+
+  samples <- mod_weightedBayes$sample(
+    data = data_weightedBayes, # the data :-)
+    seed = 123,  # a seed, so I always get the same results
+    chains = 2,  # how many chains should I fit (to check whether they give the same results)
+    parallel_chains = 2, # how many of the chains can be run in parallel?
+    threads_per_chain = 2, # distribute gradient estimations within chain across multiple cores
+    iter_warmup = 1000,  # warmup iterations through which hyperparameters (steps and step length) are adjusted
+    iter_sampling = 2000, # total number of iterations
+    refresh = 0,  # how often to show that iterations have been run
+    max_treedepth = 20, # how many steps in the future to check to avoid u-turns
+    adapt_delta = 0.99, # how high a learning rate to adjust hyperparameters during warmup
+  )
+  
+  #Disabling scientific notation
+  options(scipen=999)
+    
+  #extract summary 
+  samples$summary()
+  
+  # assign function within loop
+  assign(paste0("weighted_summary_ID_", i), samples$summary())
+  
+    
+}
+```
+
