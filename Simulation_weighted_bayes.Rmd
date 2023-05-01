@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #install.packages("rlist")
 
-pacman::p_load(tidyverse, brms, lme4, rlist, rstan, cmdstanr)
+pacman::p_load(tidyverse, brms, lme4, rlist, rstan, cmdstanr, rstatix, gridExtra)
 
 ```
 
@@ -146,6 +146,54 @@ for (i in 1:n_agents) {
 p = seq(0, 1, length=100)
 
 #create plot of Beta distribution with shape parameters 2 and 10
-plot(p, dbeta(p, 4, 2), type='l')
+plot(p, dbeta(p, 4, 2), type='l') + title("Distribution from which weights are sampled")
+```
+
+
+
+```{r}
+#Summary statistics
+get_summary_stats(df[, c("FirstRating", "SecondRating", "Change", "GroupRating")]) 
+
+#Explore FirstRating
+FirstRating <- data.frame(table(df$FirstRating))
+
+p1 <- ggplot(FirstRating, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "FirstRating", y = "Count") +
+    scale_fill_brewer(palette = "Dark2") +
+  guides(fill = FALSE)
+
+#Explore SecondRating
+SecondRating <- data.frame(table(df$SecondRating))
+
+p2 <- ggplot(SecondRating, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "SecondRating", y = "Count") +
+    scale_fill_brewer(palette = "Dark2") +
+  guides(fill = FALSE)
+
+#Explore GroupRating
+GroupRating <- data.frame(table(df$GroupRating))
+
+p3 <- ggplot(GroupRating, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  labs(x = "GroupRating", y = "Count") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = FALSE)
+
+#Explore Change
+Change <- data.frame(table(df$Change))
+
+#Explore Change
+p4 <- ggplot(Change, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "Change", y = "Count") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = FALSE)
+
+#Grid arrange plots
+grid.arrange(p1, p2, p3, p4, ncol = 2, top = "Distribution of different variables, weighted Bayes simulated data")
+
 ```
 
